@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Viewer Rewards Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3e5f5;
+      color: #4a148c;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #7b1fa2;
+    }
+
+    .goal {
+      background-color: #e1bee7;
+      padding: 20px;
+      margin: 20px auto;
+      border-radius: 10px;
+      max-width: 400px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .progress-bar {
+      background-color: #d1c4e9;
+      border-radius: 10px;
+      height: 30px;
+      margin: 10px 0;
+      overflow: hidden;
+    }
+
+    .progress {
+      background-color: #7e57c2;
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+
+    button {
+      background-color: #ab47bc;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+
+    button:hover {
+      background-color: #8e24aa;
+    }
+
+    select, input[type="number"] {
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #7b1fa2;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Twitch Viewer Rewards Tracker</h1>
+
+  <div class="goal" id="cosplayGoal">
+    <h2>Cosplay Stream</h2>
+    <div class="progress-bar">
+      <div class="progress" id="cosplayProgress"></div>
+    </div>
+    <p><span id="cosplaySubs">0</span> / 10 Subs</p>
+  </div>
+
+  <div class="goal" id="mukbangGoal">
+    <h2>Mukbang Stream</h2>
+    <div class="progress-bar">
+      <div class="progress" id="mukbangProgress"></div>
+    </div>
+    <p><span id="mukbangSubs">0</span> / 15 Subs</p>
+  </div>
+
+  <div>
+    <h3>Donate Subs to a Goal</h3>
+    <select id="goalSelect">
+      <option value="cosplay">Cosplay Stream</option>
+      <option value="mukbang">Mukbang Stream</option>
+    </select>
+    <br>
+    <input type="number" id="subCount" placeholder="Number of Subs" min="1" value="1">
+    <br>
+    <button onclick="donateSubs()">Donate</button>
+  </div>
+
+  <script>
+    // Initialize or load from localStorage
+    let cosplaySubs = parseInt(localStorage.getItem('cosplaySubs')) || 0;
+    let mukbangSubs = parseInt(localStorage.getItem('mukbangSubs')) || 0;
+
+    // Update UI
+    function updateProgress() {
+      document.getElementById('cosplaySubs').textContent = cosplaySubs;
+      document.getElementById('mukbangSubs').textContent = mukbangSubs;
+
+      document.getElementById('cosplayProgress').style.width = (cosplaySubs / 10) * 100 + '%';
+      document.getElementById('mukbangProgress').style.width = (mukbangSubs / 15) * 100 + '%';
+    }
+
+    // Donate subs
+    function donateSubs() {
+      const selectedGoal = document.getElementById('goalSelect').value;
+      const subsToDonate = parseInt(document.getElementById('subCount').value);
+
+      if (selectedGoal === 'cosplay') {
+        cosplaySubs += subsToDonate;
+        if (cosplaySubs > 10) cosplaySubs = 10; // Cap at 10 subs
+        localStorage.setItem('cosplaySubs', cosplaySubs);
+      } else if (selectedGoal === 'mukbang') {
+        mukbangSubs += subsToDonate;
+        if (mukbangSubs > 15) mukbangSubs = 15; // Cap at 15 subs
+        localStorage.setItem('mukbangSubs', mukbangSubs);
+      }
+
+      updateProgress();
+    }
+
+    // Initial update
+    updateProgress();
+  </script>
+  
+</body>
+</html>
