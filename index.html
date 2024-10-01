@@ -55,11 +55,19 @@
       background-color: #8e24aa;
     }
 
-    select, input[type="number"] {
+    select, input[type="number"], input[type="text"] {
       padding: 10px;
       border-radius: 5px;
       border: 1px solid #7b1fa2;
       margin: 10px 0;
+    }
+
+    .login-container {
+      margin: 20px 0;
+    }
+
+    .admin-container {
+      margin: 20px 0;
     }
   </style>
 </head>
@@ -67,68 +75,150 @@
 
   <h1>Twitch Viewer Rewards Tracker</h1>
 
-  <div class="goal" id="cosplayGoal">
-    <h2>Cosplay Stream</h2>
-    <div class="progress-bar">
-      <div class="progress" id="cosplayProgress"></div>
-    </div>
-    <p><span id="cosplaySubs">0</span> / 10 Subs</p>
+  <!-- Login section -->
+  <div class="login-container">
+    <h3>Login</h3>
+    <input type="text" id="username" placeholder="Enter Username">
+    <button onclick="login()">Login</button>
   </div>
 
-  <div class="goal" id="mukbangGoal">
-    <h2>Mukbang Stream</h2>
-    <div class="progress-bar">
-      <div class="progress" id="mukbangProgress"></div>
-    </div>
-    <p><span id="mukbangSubs">0</span> / 15 Subs</p>
-  </div>
+  <!-- Goal section -->
+  <div id="goalContainer"></div>
 
-  <div>
+  <!-- Donate section -->
+  <div id="donateSection" style="display:none;">
     <h3>Donate Subs to a Goal</h3>
-    <select id="goalSelect">
-      <option value="cosplay">Cosplay Stream</option>
-      <option value="mukbang">Mukbang Stream</option>
-    </select>
+    <select id="goalSelect"></select>
     <br>
     <input type="number" id="subCount" placeholder="Number of Subs" min="1" value="1">
     <br>
     <button onclick="donateSubs()">Donate</button>
   </div>
 
+  <!-- Admin section to add/remove goals -->
+  <div class="admin-container" id="adminSection" style="display:none;">
+    <h3>Admin: Add or Remove Goals</h3>
+    <input type="text" id="newGoalName" placeholder="Goal Name">
+    <input type="number" id="newGoalTarget" placeholder="Target Subs" min="1">
+    <button onclick="addGoal()">Add Goal</button>
+    <br>
+    <select id="removeGoalSelect"></select>
+    <button onclick="removeGoal()">Remove Selected Goal</button>
+  </div>
+
   <script>
-    // Initialize or load from localStorage
-    let cosplaySubs = parseInt(localStorage.getItem('cosplaySubs')) || 0;
-    let mukbangSubs = parseInt(localStorage.getItem('mukbangSubs')) || 0;
+    let goals = {};
 
-    // Update UI
-    function updateProgress() {
-      document.getElementById('cosplaySubs').textContent = cosplaySubs;
-      document.getElementById('mukbangSubs').textContent = mukbangSubs;
-
-      document.getElementById('cosplayProgress').style.width = (cosplaySubs / 10) * 100 + '%';
-      document.getElementById('mukbangProgress').style.width = (mukbangSubs / 15) * 100 + '%';
+    // Login system using localStorage
+    function login() {
+      const username = document.getElementById('username').value;
+      if (username) {
+        localStorage.setItem('currentUser', username);
+        loadUserData(username);
+        document.getElementById('donateSection').style.display = 'block';
+        document.getElementById('adminSection').style.display = 'block';
+        document.querySelector('.login-container').style.display = 'none';
+      } else {
+        alert('Please enter a username');
+      }
     }
 
-    // Donate subs
+    // Load user-specific data
+    function loadUserData(username) {
+      const savedGoals = localStorage.getItem(`${username}_goals`);
+      if (savedGoals) {
+        goals = JSON.parse(savedGoals);
+      } else {
+        goals = {}; // Initialize an empty goals object
+      }
+      updateGoalUI();
+    }
+
+    // Save user-specific data
+    function saveUserData() {
+      const username = localStorage.getItem('currentUser');
+      localStorage.setItem(`${username}_goals`, JSON.stringify(goals));
+    }
+
+    // Add goal
+    function addGoal() {
+      const newGoalName = document.getElementById('newGoalName').value;
+      const newGoalTarget = document.getElementById('newGoalTarget').value;
+      if (newGoalName && newGoalTarget) {
+        goals[newGoalName] = { subs: 0, target: parseInt(newGoalTarget) };
+        saveUserData();
+        updateGoalUI();
+      } else {
+        alert('Please enter a goal name and target subs');
+      }
+    }
+
+    // Remove goal
+    function removeGoal() {
+      const selectedGoal = document.getElementById('removeGoalSelect').value;
+      if (selectedGoal) {
+        delete goals[selectedGoal];
+        saveUserData();
+        updateGoalUI();
+      }
+    }
+
+    // Update goal UI
+    function updateGoalUI() {
+      const goalContainer = document.getElementById('goalContainer');
+      const goalSelect = document.getElementById('goalSelect');
+      const removeGoalSelect = document.getElementById('removeGoalSelect');
+
+      goalContainer.innerHTML = '';
+      goalSelect.innerHTML = '';
+      removeGoalSelect.innerHTML = '';
+
+      for (const goal in goals) {
+        const goalDiv = document.createElement('div');
+        goalDiv.classList.add('goal');
+        goalDiv.innerHTML = `
+          <h2>${goal}</h2>
+          <div class="progress-bar">
+            <div class="progress" style="width: ${(goals[goal].subs / goals[goal].target) * 100}%"></div>
+          </div>
+          <p>${goals[goal].subs} / ${goals[goal].target} Subs</p>
+        `;
+        goalContainer.appendChild(goalDiv);
+
+        // Add goal to donate and remove dropdowns
+        const option = document.createElement('option');
+        option.value = goal;
+        option.textContent = goal;
+        goalSelect.appendChild(option);
+        removeGoalSelect.appendChild(option.cloneNode(true));
+      }
+    }
+
+    // Donate subs to a goal
     function donateSubs() {
       const selectedGoal = document.getElementById('goalSelect').value;
       const subsToDonate = parseInt(document.getElementById('subCount').value);
 
-      if (selectedGoal === 'cosplay') {
-        cosplaySubs += subsToDonate;
-        if (cosplaySubs > 10) cosplaySubs = 10; // Cap at 10 subs
-        localStorage.setItem('cosplaySubs', cosplaySubs);
-      } else if (selectedGoal === 'mukbang') {
-        mukbangSubs += subsToDonate;
-        if (mukbangSubs > 15) mukbangSubs = 15; // Cap at 15 subs
-        localStorage.setItem('mukbangSubs', mukbangSubs);
+      if (selectedGoal && subsToDonate > 0) {
+        goals[selectedGoal].subs += subsToDonate;
+        if (goals[selectedGoal].subs > goals[selectedGoal].target) {
+          goals[selectedGoal].subs = goals[selectedGoal].target; // Cap at the target
+        }
+        saveUserData();
+        updateGoalUI();
       }
-
-      updateProgress();
     }
 
-    // Initial update
-    updateProgress();
+    // Load current user (if logged in previously)
+    window.onload = function () {
+      const currentUser = localStorage.getItem('currentUser');
+      if (currentUser) {
+        loadUserData(currentUser);
+        document.getElementById('donateSection').style.display = 'block';
+        document.getElementById('adminSection').style.display = 'block';
+        document.querySelector('.login-container').style.display = 'none';
+      }
+    };
   </script>
   
 </body>
